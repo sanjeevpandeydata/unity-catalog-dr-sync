@@ -1,0 +1,4 @@
+source_schema,target_schema
+staging,staging
+reporting,reporting
+curated,curated

@@ -1,0 +1,2 @@
+source_catalog,target_catalog,target_storage_root
+uc_dev,uc_dev_dr,abfss://curated@yourstorageaccount-dr.dfs.core.windows.net/uc_catalog

@@ -1,0 +1,2 @@
+source_cred_name,target_cred_name,target_mgd_id_connector,target_mgd_id_identity,target_sp_directory,target_sp_appid,target_sp_secret
+primary_storage_cred,dr_storage_cred,/subscriptions/<sub-id>/resourceGroups/<rg>/providers/Microsoft.Databricks/accessConnectors/<connector-name>,,,,

@@ -1,0 +1,3 @@
+source_loc_name,target_loc_name,target_url
+primary_landing_loc,dr_landing_loc,abfss://landing@yourstorageaccount-dr.dfs.core.windows.net
+primary_curated_loc,dr_curated_loc,abfss://curated@yourstorageaccount-dr.dfs.core.windows.net

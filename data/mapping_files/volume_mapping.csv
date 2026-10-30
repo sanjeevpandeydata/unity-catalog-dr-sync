@@ -1,0 +1,2 @@
+source_loc,target_loc
+abfss://curated@yourstorageaccount.dfs.core.windows.net,abfss://curated@yourstorageaccount-dr.dfs.core.windows.net
