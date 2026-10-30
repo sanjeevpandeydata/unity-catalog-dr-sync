@@ -1,0 +1,142 @@
+# ============================================================
+# Databricks Workflow Definition
+# Pipeline : wf_deepclone_dr
+# Purpose  : Full DR deep clone pipeline — syncs Delta tables,
+#            external volumes, views, and permissions from the
+#            primary workspace to the DR target workspace.
+#            Run AFTER wf_metadata_sync_dr.
+# Order    : sync_tables → sync_ext_volumes → sync_views
+#            → sync_permissions
+# Author   : Sanjeev Kumar Pandey
+# ============================================================
+
+resources:
+  jobs:
+    wf_deepclone_dr:
+      name: wf_deepclone_dr
+
+      tasks:
+        - task_key: sync_tables
+          notebook_task:
+            notebook_path: /Workspace/projects/dr_deepclone/03_sync_tables
+            source: WORKSPACE
+          job_cluster_key: deepclone_dr_cluster
+          libraries:
+            - whl:  /Volumes/uc_dev/default/jars/shared_functions-0.4-py3-none-any.whl
+            - pypi: { package: azure-eventhub }
+            - pypi: { package: azure-storage-file-share }
+
+        - task_key: sync_ext_volumes
+          depends_on:
+            - task_key: sync_tables
+          notebook_task:
+            notebook_path: /Workspace/projects/dr_deepclone/04_sync_ext_volumes
+            source: WORKSPACE
+          job_cluster_key: deepclone_dr_cluster
+          libraries:
+            - whl:  /Volumes/uc_dev/default/jars/shared_functions-0.7-py3-none-any.whl
+            - pypi: { package: azure-eventhub }
+            - pypi: { package: azure-storage-file-share }
+
+        - task_key: sync_views
+          depends_on:
+            - task_key: sync_ext_volumes
+          notebook_task:
+            notebook_path: /Workspace/projects/dr_deepclone/05_sync_views
+            source: WORKSPACE
+          job_cluster_key: deepclone_dr_cluster
+          libraries:
+            - whl:  /Volumes/uc_dev/default/jars/shared_functions-0.7-py3-none-any.whl
+            - pypi: { package: azure-eventhub }
+            - pypi: { package: azure-storage-file-share }
+
+        - task_key: sync_permissions
+          depends_on:
+            - task_key: sync_views
+          notebook_task:
+            notebook_path: /Workspace/projects/dr_deepclone/06_sync_permissions
+            source: WORKSPACE
+          job_cluster_key: deepclone_dr_cluster
+          libraries:
+            - whl:  /Volumes/uc_dev/default/jars/shared_functions-0.7-py3-none-any.whl
+            - pypi: { package: azure-eventhub }
+            - pypi: { package: azure-storage-file-share }
+
+      job_clusters:
+        - job_cluster_key: deepclone_dr_cluster
+          new_cluster:
+            spark_version: 14.3.x-scala2.12
+            azure_attributes:
+              availability: SPOT_WITH_FALLBACK_AZURE
+            node_type_id: Standard_D4ds_v5
+            spark_env_vars:
+              PYSPARK_PYTHON: /databricks/python3/bin/python3
+            data_security_mode: DATA_SECURITY_MODE_DEDICATED
+            runtime_engine: STANDARD
+            autoscale:
+              min_workers: 2
+              max_workers: 8
+
+      queue:
+        enabled: true
+
+      parameters:
+        - name: catalog_mapping_file
+          default: /Volumes/uc_dev/default/dr_mapping_files/catalog_mapping.csv
+
+        - name: cloud_type
+          default: azure
+
+        - name: env
+          default: dev
+
+        - name: landing_zone_url
+          default: abfss://curated@yourstorageaccount-dr.dfs.core.windows.net
+
+        - name: num_exec
+          default: "1"
+
+        - name: ops_database
+          default: ops
+
+        - name: ops_table
+          default: ops_application_metadata
+
+        - name: pl_or_wl_name
+          default: wf_deepclone_dr
+
+        - name: response_backoff_param
+          default: "300"
+
+        - name: schema_mapping_file
+          default: /Volumes/uc_dev/default/dr_mapping_files/schema_mapping.csv
+
+        - name: source_catalog
+          default: uc_dev
+
+        - name: source_landing_url
+          default: abfss://landing@yourstorageaccount.dfs.core.windows.net
+
+        - name: target_catalog
+          default: uc_dev_dr
+
+        - name: target_landing_url
+          default: abfss://landing@yourstorageaccount-dr.dfs.core.windows.net
+
+        - name: volume_mapping_path
+          default: /Volumes/uc_dev/default/dr_mapping_files/volume_mapping.csv
+
+        - name: w_source_id
+          default: <your-source-warehouse-id>
+
+        - name: w_target_id
+          default: <your-target-warehouse-id>
+
+        - name: wait_timeout
+          default: 30s
+
+        - name: status_tbl
+          default: tbl_run_status
+
+      run_as:
+        service_principal_name: <your-service-principal-id>

@@ -1,0 +1,100 @@
+# ============================================================
+# Databricks Workflow Definition
+# Pipeline : wf_metadata_sync_dr
+# Purpose  : Syncs Unity Catalog metadata (credentials,
+#            external locations, catalogs, schemas) from the
+#            primary workspace to the DR target workspace.
+#            Run this BEFORE wf_deepclone_dr.
+# Order    : sync_creds_and_locations → sync_catalogs_and_schemas
+# Author   : Sanjeev Kumar Pandey
+# ============================================================
+
+resources:
+  jobs:
+    wf_metadata_sync_dr:
+      name: wf_metadata_sync_dr
+
+      tasks:
+        - task_key: sync_creds_and_locations
+          notebook_task:
+            notebook_path: /Workspace/projects/dr_metadatasync/01_sync_creds_and_locations
+            source: WORKSPACE
+          job_cluster_key: metadatasync_dr_cluster
+          libraries:
+            - pypi: { package: azure-storage-file-share }
+            - pypi: { package: azure-eventhub }
+            - whl:  /Volumes/uc_dev/default/jars/shared_functions-0.7-py3-none-any.whl
+
+        - task_key: sync_catalogs_and_schemas
+          depends_on:
+            - task_key: sync_creds_and_locations
+          notebook_task:
+            notebook_path: /Workspace/projects/dr_metadatasync/02_sync_catalogs_and_schemas
+            source: WORKSPACE
+          job_cluster_key: metadatasync_dr_cluster
+          libraries:
+            - whl: /Volumes/uc_dev/default/jars/shared_functions-0.7-py3-none-any.whl
+
+      job_clusters:
+        - job_cluster_key: metadatasync_dr_cluster
+          new_cluster:
+            spark_version: 14.3.x-scala2.12
+            azure_attributes:
+              availability: SPOT_WITH_FALLBACK_AZURE
+            node_type_id: Standard_D4ds_v5
+            spark_env_vars:
+              PYSPARK_PYTHON: /databricks/python3/bin/python3
+            data_security_mode: DATA_SECURITY_MODE_DEDICATED
+            runtime_engine: STANDARD
+            autoscale:
+              min_workers: 2
+              max_workers: 8
+
+      queue:
+        enabled: true
+
+      parameters:
+        - name: appName
+          default: metadata_sync_dr
+
+        - name: catalog_mapping_file
+          default: /Volumes/uc_dev/default/dr_mapping_files/catalog_mapping.csv
+
+        - name: cloud_type
+          default: azure
+
+        - name: create_credential_flag
+          default: "false"
+
+        - name: cred_mapping_file
+          default: /Volumes/uc_dev/default/dr_mapping_files/azure_cred_mapping.csv
+
+        - name: env
+          default: dev
+
+        - name: loc_mapping_file
+          default: /Volumes/uc_dev/default/dr_mapping_files/external_loc_mapping.csv
+
+        - name: ops_database
+          default: ops
+
+        - name: ops_table
+          default: ops_application_metadata
+
+        - name: pipeline_or_workflow_name
+          default: wf_metadata_sync_dr
+
+        - name: schema_mapping_file
+          default: /Volumes/uc_dev/default/dr_mapping_files/schema_mapping.csv
+
+        - name: status_database
+          default: ops
+
+        - name: status_tbl
+          default: tbl_run_status
+
+        - name: schemas_to_ignore
+          default: "default,information_schema"
+
+      run_as:
+        service_principal_name: <your-service-principal-id>
