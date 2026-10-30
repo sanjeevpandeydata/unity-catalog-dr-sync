@@ -1,0 +1,8 @@
+# Runtime dependencies for the notebooks.
+# On Databricks, pandas and requests are already available on the
+# 14.3 runtime; databricks-sdk is the main additional dependency.
+# These versions are a starting point for local checks — pin them
+# to the versions in your own workspace before production use.
+databricks-sdk>=0.30.0
+pandas>=2.0.0
+requests>=2.31.0

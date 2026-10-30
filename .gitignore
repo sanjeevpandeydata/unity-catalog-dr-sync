@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.env
+*.env
+
+# Secrets and local config — never commit real hosts, tokens, or keys
+*.pem
+*.key
+secrets*.json
+*_secrets*.csv
+local_*.csv
+local_*.yml
+local_*.yaml
+
+# Databricks / notebooks
+.databricks/
+*.ipynb_checkpoints
+
+# IDE / OS
+.idea/
+.vscode/
+*.swp
+.DS_Store
+Thumbs.db
